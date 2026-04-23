@@ -2,6 +2,8 @@
 import { ref, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/fr'
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 dayjs.locale('fr')
 
@@ -33,7 +35,8 @@ function removeTask(i) {
 }
 
 function onSave() {
-  emit('save', props.day, props.entryId, localTasks.value.filter(t => t.trim()))
+    emit('save', props.day, props.entryId, localTasks.value.filter(t => t.trim()))
+    toast.success('Fiche sauvegardée avec succès !');
 }
 </script>
 

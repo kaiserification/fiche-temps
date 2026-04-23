@@ -6,6 +6,8 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import { initializeTheme } from './composables/useAppearance';
+import Vue3Toastify, { toast, type ToastContainerOptions } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -27,6 +29,11 @@ createInertiaApp({
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         createApp({ render: () => h(App, props) })
+            .use(Vue3Toastify, {
+                autoClose: 3000,
+                animate: toast.TRANSITIONS.SLIDE,
+                position: toast.POSITION.BOTTOM_RIGHT,
+            } as ToastContainerOptions,)
             .use(plugin)
             .use(ZiggyVue)
             .mount(el);

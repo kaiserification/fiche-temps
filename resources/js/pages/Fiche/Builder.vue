@@ -73,7 +73,7 @@ async function updateFiche() {
         const res = await fetch(`/fiche/${props.fiche.id}`, {
             method: 'PATCH',
             credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': getCsrf() },
             body: JSON.stringify({
                 projet: projet.value,
                 business_unit: bu.value,
@@ -81,11 +81,15 @@ async function updateFiche() {
                 period_end: localEnd.value,
             }),
         });
-        const data = await res.json();
-        if (!res.ok) {
-            errorMsg.value = data.message ?? `Erreur HTTP ${res.status}`;
+        if (res.status === 419) {
+            errorMsg.value = 'Session expirée. Veuillez recharger la page.';
         } else {
-            isEditing.value = false;
+            const data = await res.json();
+            if (!res.ok) {
+                errorMsg.value = data.message ?? `Erreur HTTP ${res.status}`;
+            } else {
+                isEditing.value = false;
+            }
         }
     } catch {
         errorMsg.value = 'Erreur réseau. Vérifiez votre connexion.';
@@ -127,7 +131,8 @@ const totalWorkdays = computed(() => computedWorkdays.value.length);
 const completionPct = computed(() => (totalWorkdays.value ? Math.round((completionCount.value / totalWorkdays.value) * 100) : 0));
 
 function getCsrf() {
-    return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
 }
 
 // ── Save a day (create or update) ────────────────────────────────────────────
@@ -143,15 +148,19 @@ async function saveDay(day, entryId, tasks) {
         const res = await fetch(url, {
             method,
             credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrf() },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-XSRF-TOKEN': getCsrf() },
             body: JSON.stringify(body),
         });
-        const data = await res.json();
-        if (!res.ok) {
-            errorMsg.value = data.message ?? `Erreur HTTP ${res.status}`;
+        if (res.status === 419) {
+            errorMsg.value = 'Session expirée. Veuillez recharger la page.';
         } else {
-            filledDays.value[day] = data.tasks ?? tasks;
-            dayEntries.value[day] = data.entry;
+            const data = await res.json();
+            if (!res.ok) {
+                errorMsg.value = data.message ?? `Erreur HTTP ${res.status}`;
+            } else {
+                filledDays.value[day] = data.tasks ?? tasks;
+                dayEntries.value[day] = data.entry;
+            }
         }
     } catch {
         errorMsg.value = 'Erreur réseau. Vérifiez votre connexion.';
