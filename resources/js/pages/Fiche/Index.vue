@@ -3,7 +3,7 @@ import { useAppearance } from '@/composables/useAppearance';
 import { Link, router } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
-import { Monitor, Moon, Sun } from 'lucide-vue-next';
+import { LogOut, Monitor, Moon, Sun } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 dayjs.locale('fr');
@@ -75,6 +75,15 @@ function progressBarClass(count) {
                         :title="appearance"
                     >
                         <component :is="themeIcons[appearance]" class="h-4 w-4" />
+                    </button>
+                    <!-- Logout -->
+                    <button
+                        @click="router.post('/logout')"
+                        class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                        title="Déconnexion"
+                    >
+                        <LogOut class="h-4 w-4" />
+                        <span>Déconnexion</span>
                     </button>
                     <!-- New fiche -->
                     <Link

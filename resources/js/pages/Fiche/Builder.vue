@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { Monitor, Moon, Sun } from 'lucide-vue-next';
+import { LogOut, Monitor, Moon, Sun } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import CalendarGrid from '../components/CalendarGrid.vue';
 import DayPanel from '../components/DayPanel.vue';
@@ -238,6 +238,14 @@ function createFiche() {
                         </svg>
                         Exporter .xlsx
                     </a>
+                    <button
+                        @click="router.post('/logout')"
+                        class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                        title="Déconnexion"
+                    >
+                        <LogOut class="h-3.5 w-3.5" />
+                        <span>Déconnexion</span>
+                    </button>
                 </div>
             </div>
         </div>
