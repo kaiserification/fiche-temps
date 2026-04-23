@@ -33,6 +33,8 @@ const user = page.props.auth.user as User;
 const form = useForm({
     name: user.name,
     email: user.email,
+    matricule: user.matricule ?? '',
+    profil: user.profil ?? '',
 });
 
 const submit = () => {
@@ -69,6 +71,18 @@ const submit = () => {
                             placeholder="Email address"
                         />
                         <InputError class="mt-2" :message="form.errors.email" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="matricule">Matricule</Label>
+                        <Input id="matricule" class="mt-1 block w-full" v-model="form.matricule" placeholder="Ex: EMP-12345" />
+                        <InputError class="mt-2" :message="form.errors.matricule" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="profil">Profil</Label>
+                        <Input id="profil" class="mt-1 block w-full" v-model="form.profil" placeholder="Ex: Développeur Senior" />
+                        <InputError class="mt-2" :message="form.errors.profil" />
                     </div>
 
                     <div v-if="mustVerifyEmail && !user.email_verified_at">

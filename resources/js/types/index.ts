@@ -33,6 +33,8 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    matricule?: string | null;
+    profil?: string | null;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;

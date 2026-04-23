@@ -25,6 +25,8 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'matricule' => ['nullable', 'string', 'max:50'],
+            'profil'    => ['nullable', 'string', 'max:100'],
         ];
     }
 }
