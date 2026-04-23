@@ -31,7 +31,7 @@ createInertiaApp({
         createApp({ render: () => h(App, props) })
             .use(Vue3Toastify, {
                 autoClose: 3000,
-                animate: toast.TRANSITIONS.SLIDE,
+                transition: toast.TRANSITIONS.SLIDE,
                 position: toast.POSITION.BOTTOM_RIGHT,
             } as ToastContainerOptions,)
             .use(plugin)
