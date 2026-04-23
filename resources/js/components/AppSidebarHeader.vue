@@ -2,6 +2,8 @@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItemType } from '@/types';
+import { Link } from '@inertiajs/vue3';
+import { LogOut } from 'lucide-vue-next';
 
 defineProps<{
     breadcrumbs?: BreadcrumbItemType[];
@@ -33,6 +35,17 @@ defineProps<{
                     </BreadcrumbList>
                 </Breadcrumb>
             </template>
+        </div>
+        <div class="ml-auto">
+            <Link
+                method="post"
+                :href="route('logout')"
+                as="button"
+                class="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+                <LogOut class="h-4 w-4" />
+                <span>Déconnexion</span>
+            </Link>
         </div>
     </header>
 </template>
