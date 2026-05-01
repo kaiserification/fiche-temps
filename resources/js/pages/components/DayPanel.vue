@@ -1,8 +1,8 @@
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/fr'
-import { GitBranch } from 'lucide-vue-next'
+import { FileSpreadsheet, GitBranch } from 'lucide-vue-next'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
@@ -38,6 +38,24 @@ function removeTask(i) {
 function onSave() {
     emit('save', props.day, props.entryId, localTasks.value.filter(t => t.trim()))
     toast.success('Fiche sauvegardée avec succès !');
+}
+
+// ── Vue Excel ─────────────────────────────────────────────────────────────────
+const showExcel   = ref(false)
+const excelCopied = ref(false)
+
+const excelText = computed(() =>
+    localTasks.value
+        .filter(t => t.trim())
+        .map((t, i) => `${i + 1}. ${t.trim()}`)
+        .join('\n')
+)
+
+async function copyForExcel() {
+    if (!excelText.value) return
+    await navigator.clipboard.writeText(excelText.value)
+    excelCopied.value = true
+    setTimeout(() => (excelCopied.value = false), 2000)
 }
 
 // ── Git → inject ──────────────────────────────────────────────────────────────
@@ -148,6 +166,18 @@ async function generateFromGit() {
             </button>
             <span class="text-gray-200 dark:text-gray-700">|</span>
             <button
+              @click="showExcel = !showExcel"
+              :class="showExcel
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400'"
+              class="flex items-center gap-1 text-[10px] font-medium transition-colors"
+              title="Vue cellule Excel"
+            >
+              <FileSpreadsheet class="w-3 h-3" />
+              Excel
+            </button>
+            <span class="text-gray-200 dark:text-gray-700">|</span>
+            <button
               @click="addTask"
               class="text-[10px] font-medium text-indigo-500 dark:text-indigo-400
                      hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
@@ -179,6 +209,42 @@ async function generateFromGit() {
             {{ gitLoading ? 'Génération…' : 'Générer les tâches' }}
           </button>
           <p v-if="gitError" class="text-[10px] text-red-500 dark:text-red-400">{{ gitError }}</p>
+        </div>
+
+        <!-- Excel cell view -->
+        <div v-if="showExcel && localTasks.filter(t => t.trim()).length"
+             class="mb-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/20 p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+              <FileSpreadsheet class="w-3 h-3" />
+              Cellule Excel
+            </span>
+            <button
+              @click="copyForExcel"
+              class="flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors"
+              :class="excelCopied
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                : 'text-emerald-600 hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-emerald-900/30'"
+            >
+              <svg v-if="excelCopied" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              {{ excelCopied ? 'Copié !' : 'Copier' }}
+            </button>
+          </div>
+          <textarea
+            readonly
+            :value="excelText"
+            :rows="localTasks.filter(t => t.trim()).length + 1"
+            class="w-full resize-none rounded-md border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-gray-700 px-2.5 py-2 font-mono text-xs text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 select-all"
+            @click="$event.target.select()"
+          />
+          <p class="text-[10px] text-emerald-600/70 dark:text-emerald-500/70">
+            Double-cliquez dans une cellule Excel, puis collez (Ctrl+V).
+          </p>
         </div>
 
         <div v-if="localTasks.length" class="space-y-1.5">

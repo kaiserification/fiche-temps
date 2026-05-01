@@ -4,9 +4,12 @@ namespace App\Exports;
 
 use App\Models\Fiche;
 use Carbon\Carbon;
-use Maatwebsite\Excel\Concerns\{FromCollection, WithHeadings, WithMapping};
+use Maatwebsite\Excel\Concerns\{FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles};
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class FicheExport implements FromCollection, WithHeadings, WithMapping
+class FicheExport implements FromCollection, WithHeadings, WithMapping, WithColumnWidths, WithStyles
 {
     public function __construct(private Fiche $fiche) {}
 
@@ -26,7 +29,7 @@ class FicheExport implements FromCollection, WithHeadings, WithMapping
     public function map($entry): array
     {
         $tasks = collect($entry->tasks)
-            ->map(fn($t, $i) => ($i + 1) . ". $t")
+            ->map(fn($t, $i) => ($i + 1) . '. ' . $t)
             ->implode("\n");
 
         return [
@@ -36,5 +39,44 @@ class FicheExport implements FromCollection, WithHeadings, WithMapping
             $tasks,
             '',
         ];
+    }
+
+    public function columnWidths(): array
+    {
+        return [
+            'A' => 14,
+            'B' => 30,
+            'C' => 25,
+            'D' => 70,
+            'E' => 35,
+        ];
+    }
+
+    public function styles(Worksheet $sheet): void
+    {
+        $lastRow = $sheet->getHighestRow();
+
+        // Header: bold + light indigo background
+        $sheet->getStyle('A1:E1')->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => [
+                'fillType'   => Fill::FILL_SOLID,
+                'startColor' => ['argb' => 'FFE8EAF6'],
+            ],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        // Data rows: wrap text + align top so multi-line tasks read naturally
+        $sheet->getStyle('A2:E' . $lastRow)->applyFromArray([
+            'alignment' => [
+                'wrapText' => true,
+                'vertical' => Alignment::VERTICAL_TOP,
+            ],
+        ]);
+
+        // Date column: center horizontally
+        $sheet->getStyle('A2:A' . $lastRow)->applyFromArray([
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
     }
 }
