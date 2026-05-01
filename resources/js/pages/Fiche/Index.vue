@@ -3,7 +3,7 @@ import { useAppearance } from '@/composables/useAppearance';
 import { Link, router } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
-import { LogOut, Monitor, Moon, Sun } from 'lucide-vue-next';
+import { GitBranch, LogOut, Monitor, Moon, Sun } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 dayjs.locale('fr');
@@ -14,7 +14,88 @@ const props = defineProps({
 
 const { appearance, updateAppearance } = useAppearance();
 
-const confirmingDelete = ref(null); // id de la fiche en cours de confirmation
+const confirmingDelete = ref(null);
+
+// ── Git → Fiche ──────────────────────────────────────────────────────────────
+const gitModalOpen  = ref(false);
+const gitDate       = ref(dayjs().format('YYYY-MM-DD'));
+const gitLoading    = ref(false);
+const gitError      = ref('');
+const gitResult     = ref('');
+const gitEmpty      = ref(false);
+const copied        = ref(false);
+const gitProjects   = ref([]);
+const gitProject    = ref('');
+
+async function loadProjects() {
+    try {
+        const res  = await fetch('/git-projects', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        gitProjects.value = data.projects ?? [];
+        // default: current project name derived from URL (last segment of base path)
+        const current = window.location.hostname.split('.')[0];
+        gitProject.value  = gitProjects.value.includes(current) ? current : (gitProjects.value[0] ?? '');
+    } catch {
+        gitProjects.value = [];
+    }
+}
+
+async function openGitModal() {
+    gitDate.value    = dayjs().format('YYYY-MM-DD');
+    gitResult.value  = '';
+    gitError.value   = '';
+    gitEmpty.value   = false;
+    copied.value     = false;
+    gitModalOpen.value = true;
+    await loadProjects();
+}
+
+function closeGitModal() {
+    gitModalOpen.value = false;
+}
+
+function getCsrf() {
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+async function generateFromGit() {
+    gitError.value  = '';
+    gitResult.value = '';
+    gitEmpty.value  = false;
+    gitLoading.value = true;
+    try {
+        const res = await fetch('/git-to-timesheet', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-XSRF-TOKEN': getCsrf(),
+            },
+            body: JSON.stringify({ date: gitDate.value, project: gitProject.value }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            gitError.value = data.error ?? 'Une erreur est survenue.';
+        } else if (data.empty) {
+            gitEmpty.value = true;
+        } else {
+            gitResult.value = data.tasks ?? '';
+        }
+    } catch {
+        gitError.value = 'Erreur réseau. Vérifiez votre connexion.';
+    } finally {
+        gitLoading.value = false;
+    }
+}
+
+async function copyResult() {
+    if (!gitResult.value) return;
+    await navigator.clipboard.writeText(gitResult.value);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 2000);
+}
 
 function deleteFiche(id) {
     router.delete(`/fiche/${id}`, {
@@ -84,6 +165,14 @@ function progressBarClass(count) {
                     >
                         <LogOut class="h-4 w-4" />
                         <span>Déconnexion</span>
+                    </button>
+                    <!-- Git → Fiche -->
+                    <button
+                        @click="openGitModal"
+                        class="flex items-center gap-2 rounded-lg border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
+                    >
+                        <GitBranch class="h-4 w-4" />
+                        Git → Fiche
                     </button>
                     <!-- New fiche -->
                     <Link
@@ -220,4 +309,102 @@ function progressBarClass(count) {
             </div>
         </div>
     </div>
+
+    <!-- ── Git → Fiche modal ──────────────────────────────────────────────── -->
+    <Teleport to="body">
+        <div
+            v-if="gitModalOpen"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            @click.self="closeGitModal"
+        >
+            <div class="flex w-full max-w-lg flex-col gap-5 rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <!-- Header -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40">
+                            <GitBranch class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Git → Fiche de temps</h2>
+                    </div>
+                    <button
+                        @click="closeGitModal"
+                        class="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Project selector -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Projet</label>
+                    <select
+                        v-model="gitProject"
+                        class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/30"
+                    >
+                        <option v-if="!gitProjects.length" value="" disabled>Chargement…</option>
+                        <option v-for="p in gitProjects" :key="p" :value="p">{{ p }}</option>
+                    </select>
+                </div>
+
+                <!-- Date picker -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Date</label>
+                    <input
+                        v-model="gitDate"
+                        type="date"
+                        class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/30"
+                    />
+                </div>
+
+                <!-- Generate button -->
+                <button
+                    @click="generateFromGit"
+                    :disabled="gitLoading"
+                    class="flex items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    <svg v-if="gitLoading" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <GitBranch v-else class="h-4 w-4" />
+                    {{ gitLoading ? 'Génération en cours…' : 'Générer les tâches' }}
+                </button>
+
+                <!-- Error -->
+                <p v-if="gitError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                    {{ gitError }}
+                </p>
+
+                <!-- Empty state -->
+                <p v-if="gitEmpty" class="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+                    Aucun commit trouvé pour le {{ dayjs(gitDate).locale('fr').format('D MMMM YYYY') }}.
+                </p>
+
+                <!-- Result -->
+                <div v-if="gitResult" class="flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Tâches générées</span>
+                        <button
+                            @click="copyResult"
+                            class="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+                            :class="copied
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'"
+                        >
+                            <svg v-if="copied" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <svg v-else class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            {{ copied ? 'Copié !' : 'Copier' }}
+                        </button>
+                    </div>
+                    <pre class="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-800 dark:border-gray-600 dark:bg-gray-700/50 dark:text-gray-200">{{ gitResult }}</pre>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 </template>

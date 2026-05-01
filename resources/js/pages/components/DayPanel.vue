@@ -2,6 +2,7 @@
 import { ref, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/fr'
+import { GitBranch } from 'lucide-vue-next'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
@@ -38,6 +39,72 @@ function onSave() {
     emit('save', props.day, props.entryId, localTasks.value.filter(t => t.trim()))
     toast.success('Fiche sauvegardée avec succès !');
 }
+
+// ── Git → inject ──────────────────────────────────────────────────────────────
+const gitOpen     = ref(false)
+const gitProjects = ref([])
+const gitProject  = ref('')
+const gitLoading  = ref(false)
+const gitError    = ref('')
+
+function getCsrf() {
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)
+    return match ? decodeURIComponent(match[1]) : ''
+}
+
+async function toggleGit() {
+    gitError.value = ''
+    gitOpen.value  = !gitOpen.value
+    if (gitOpen.value && !gitProjects.value.length) {
+        try {
+            const res  = await fetch('/git-projects', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            const data = await res.json()
+            gitProjects.value = data.projects ?? []
+            gitProject.value  = gitProjects.value[0] ?? ''
+        } catch { /* silent */ }
+    }
+}
+
+function parseTaskLines(text) {
+    return text
+        .split('\n')
+        .filter(line => /^\d+[\.\)]\s/.test(line.trim()))
+        .map(line => line.replace(/^\d+[\.\)]\s+/, '').trim())
+        .filter(Boolean)
+}
+
+async function generateFromGit() {
+    if (!gitProject.value) return
+    gitError.value   = ''
+    gitLoading.value = true
+    try {
+        const res  = await fetch('/git-to-timesheet', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': getCsrf() },
+            body: JSON.stringify({ date: props.day, project: gitProject.value }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+            gitError.value = data.error ?? 'Une erreur est survenue.'
+        } else if (data.empty) {
+            gitError.value = 'Aucun commit trouvé pour ce jour.'
+        } else {
+            const lines = parseTaskLines(data.tasks ?? '')
+            if (lines.length) {
+                localTasks.value = lines
+                gitOpen.value    = false
+                toast.success(`${lines.length} tâche${lines.length > 1 ? 's' : ''} injectée${lines.length > 1 ? 's' : ''} depuis Git`)
+            } else {
+                gitError.value = 'Aucune tâche extraite de la réponse.'
+            }
+        }
+    } catch {
+        gitError.value = 'Erreur réseau.'
+    } finally {
+        gitLoading.value = false
+    }
+}
 </script>
 
 <template>
@@ -67,13 +134,51 @@ function onSave() {
             Tâches
             <span class="font-normal text-gray-300 dark:text-gray-600">({{ localTasks.length }})</span>
           </p>
-          <button
-            @click="addTask"
-            class="text-[10px] font-medium text-indigo-500 dark:text-indigo-400
-                   hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+          <div class="flex items-center gap-2">
+            <button
+              @click="toggleGit"
+              :class="gitOpen
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : 'text-gray-400 dark:text-gray-500 hover:text-indigo-500 dark:hover:text-indigo-400'"
+              class="flex items-center gap-1 text-[10px] font-medium transition-colors"
+              title="Générer depuis Git"
+            >
+              <GitBranch class="w-3 h-3" />
+              Git
+            </button>
+            <span class="text-gray-200 dark:text-gray-700">|</span>
+            <button
+              @click="addTask"
+              class="text-[10px] font-medium text-indigo-500 dark:text-indigo-400
+                     hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+            >
+              + Ajouter
+            </button>
+          </div>
+        </div>
+
+        <!-- Git generate panel -->
+        <div v-if="gitOpen" class="mb-3 rounded-lg border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/60 dark:bg-indigo-950/20 p-3 space-y-2">
+          <select
+            v-model="gitProject"
+            class="w-full rounded-md border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-700 px-2.5 py-1.5 text-xs text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           >
-            + Ajouter
+            <option v-if="!gitProjects.length" value="" disabled>Chargement…</option>
+            <option v-for="p in gitProjects" :key="p" :value="p">{{ p }}</option>
+          </select>
+          <button
+            @click="generateFromGit"
+            :disabled="gitLoading || !gitProject"
+            class="w-full flex items-center justify-center gap-1.5 rounded-md bg-indigo-600 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg v-if="gitLoading" class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <GitBranch v-else class="w-3 h-3" />
+            {{ gitLoading ? 'Génération…' : 'Générer les tâches' }}
           </button>
+          <p v-if="gitError" class="text-[10px] text-red-500 dark:text-red-400">{{ gitError }}</p>
         </div>
 
         <div v-if="localTasks.length" class="space-y-1.5">
