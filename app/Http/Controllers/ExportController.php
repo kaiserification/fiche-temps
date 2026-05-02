@@ -13,7 +13,10 @@ class ExportController extends Controller
     {
         abort_if($fiche->user_id !== $req->user()->id, 403);
 
-        $filename = "fiche_{$fiche->matricule}_{$fiche->period_start->format('Y_m')}.xlsx";
+        $name  = $req->user()->name;
+        $start = $fiche->period_start->locale('fr')->isoFormat('D MMMM');
+        $end   = $fiche->period_end->locale('fr')->isoFormat('D MMMM');
+        $filename = "Fiche de temps de {$name} - ({$start} - {$end}).xlsx";
 
         return Excel::download(new FicheExport($fiche), $filename);
     }

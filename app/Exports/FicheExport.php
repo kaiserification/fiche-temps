@@ -4,12 +4,12 @@ namespace App\Exports;
 
 use App\Models\Fiche;
 use Carbon\Carbon;
-use Maatwebsite\Excel\Concerns\{FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles};
+use Maatwebsite\Excel\Concerns\{FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize};
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class FicheExport implements FromCollection, WithHeadings, WithMapping, WithColumnWidths, WithStyles
+class FicheExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     public function __construct(private Fiche $fiche) {}
 
@@ -38,17 +38,6 @@ class FicheExport implements FromCollection, WithHeadings, WithMapping, WithColu
             $this->fiche->business_unit,
             $tasks,
             '',
-        ];
-    }
-
-    public function columnWidths(): array
-    {
-        return [
-            'A' => 14,
-            'B' => 30,
-            'C' => 25,
-            'D' => 70,
-            'E' => 35,
         ];
     }
 
