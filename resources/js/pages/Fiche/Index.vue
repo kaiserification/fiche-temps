@@ -3,18 +3,63 @@ import { useAppearance } from '@/composables/useAppearance';
 import { Link, router } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
-import { GitBranch, LogOut, Monitor, Moon, Settings, Sun } from 'lucide-vue-next';
+import { GitBranch, LogOut, Monitor, Moon, Plus, Settings, Sun } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 dayjs.locale('fr');
 
 const props = defineProps({
     fiches: Array,
+    periodStart: String,
+    periodEnd: String,
 });
 
 const { appearance, updateAppearance } = useAppearance();
 
 const confirmingDelete = ref(null);
+
+// ── Création modal ───────────────────────────────────────────────────────────
+const createModalOpen  = ref(false);
+const createProjet     = ref('');
+const createBu         = ref('');
+const createStart      = ref(props.periodStart ?? dayjs().format('YYYY-MM-DD'));
+const createEnd        = ref(props.periodEnd   ?? dayjs().format('YYYY-MM-DD'));
+const createError      = ref('');
+const createLoading    = ref(false);
+
+function openCreateModal() {
+    createProjet.value  = '';
+    createBu.value      = '';
+    createStart.value   = props.periodStart ?? dayjs().format('YYYY-MM-DD');
+    createEnd.value     = props.periodEnd   ?? dayjs().format('YYYY-MM-DD');
+    createError.value   = '';
+    createModalOpen.value = true;
+}
+
+function closeCreateModal() {
+    createModalOpen.value = false;
+}
+
+function submitCreateFiche() {
+    createError.value = '';
+    if (!createProjet.value.trim()) {
+        createError.value = 'Le nom du projet est requis.';
+        return;
+    }
+    if (dayjs(createEnd.value).isBefore(dayjs(createStart.value))) {
+        createError.value = 'La date de fin doit être après la date de début.';
+        return;
+    }
+    createLoading.value = true;
+    router.post('/fiche', {
+        projet:        createProjet.value,
+        business_unit: createBu.value,
+        period_start:  createStart.value,
+        period_end:    createEnd.value,
+    }, {
+        onError: () => { createError.value = 'Une erreur est survenue.'; createLoading.value = false; },
+    });
+}
 
 // ── Git → Fiche ──────────────────────────────────────────────────────────────
 const gitModalOpen  = ref(false);
@@ -183,16 +228,13 @@ function progressBarClass(count) {
                         Git → Fiche
                     </button>
                     <!-- New fiche -->
-                    <Link
-                        href="/fiche/creer"
-                        prefetch
+                    <button
+                        @click="openCreateModal"
                         class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
                     >
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <Plus class="h-4 w-4" />
                         Nouvelle fiche
-                    </Link>
+                    </button>
                 </div>
             </div>
         </div>
@@ -213,7 +255,7 @@ function progressBarClass(count) {
                 <h2 class="mb-1 text-sm font-semibold text-gray-900 dark:text-gray-100">Aucune fiche</h2>
                 <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">Commencez par créer votre première fiche de temps.</p>
                 <button
-                    @click="router.visit('/fiche/creer')"
+                    @click="openCreateModal"
                     class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
                 >
                     Créer une fiche
@@ -411,6 +453,100 @@ function progressBarClass(count) {
                         </button>
                     </div>
                     <pre class="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-800 dark:border-gray-600 dark:bg-gray-700/50 dark:text-gray-200">{{ gitResult }}</pre>
+                </div>
+            </div>
+        </div>
+    </Teleport>
+
+    <!-- ── Création fiche modal ─────────────────────────────────────────────── -->
+    <Teleport to="body">
+        <div
+            v-if="createModalOpen"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            @click.self="closeCreateModal"
+        >
+            <div class="flex w-full max-w-md flex-col gap-5 rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <!-- Header -->
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Nouvelle fiche de temps</h2>
+                    <button
+                        @click="closeCreateModal"
+                        class="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Champs -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Projet <span class="text-red-400">*</span></label>
+                        <input
+                            v-model="createProjet"
+                            type="text"
+                            placeholder="Nom du projet"
+                            autofocus
+                            class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/30"
+                        />
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Business Unit</label>
+                        <input
+                            v-model="createBu"
+                            type="text"
+                            placeholder="Ex: Digital, Data, Cloud…"
+                            class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/30"
+                        />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Début de période</label>
+                            <input
+                                v-model="createStart"
+                                type="date"
+                                class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/30"
+                            />
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Fin de période</label>
+                            <input
+                                v-model="createEnd"
+                                type="date"
+                                :min="createStart"
+                                class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/30"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error -->
+                <p v-if="createError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                    {{ createError }}
+                </p>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-end gap-2">
+                    <button
+                        @click="closeCreateModal"
+                        class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        @click="submitCreateFiche"
+                        :disabled="createLoading || !createProjet.trim()"
+                        class="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <svg v-if="createLoading" class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        {{ createLoading ? 'Création…' : 'Créer la fiche' }}
+                    </button>
                 </div>
             </div>
         </div>

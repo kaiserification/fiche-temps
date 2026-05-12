@@ -10,10 +10,14 @@ use Inertia\Inertia;
 
 class FicheController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, FicheDeTempsService $svc)
     {
+        [$start, $end] = $svc->getPeriod();
+
         return Inertia::render('Fiche/Index', [
-            'fiches' => $request->user()->fiches()->withCount('dayEntries')->latest()->get(),
+            'fiches'      => $request->user()->fiches()->withCount('dayEntries')->latest()->get(),
+            'periodStart' => $start->toDateString(),
+            'periodEnd'   => $end->toDateString(),
         ]);
     }
 
