@@ -8,15 +8,12 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 
 Route::middleware('auth')->group(function () {
     Route::get('/',               [FicheController::class, 'index'])->name('fiche.index');
+    Route::get('/dashboard',       [FicheController::class, 'index'])->name('dashboard');
     Route::get('/fiche/creer',    [FicheController::class, 'create'])->name('fiche.create');
     Route::post('/fiche',         [FicheController::class, 'store'])->name('fiche.store');
     Route::get('/fiche/{fiche}',    [FicheController::class, 'show'])->name('fiche.show');
