@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\AppSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
@@ -10,7 +11,7 @@ class GitCommitController extends Controller
 {
     private function sitesDir(): string
     {
-        return realpath(dirname(base_path()));
+        return realpath(AppSettings::get('sites_dir', env('SITES_DIR', dirname(base_path()))));
     }
 
     public function projects()

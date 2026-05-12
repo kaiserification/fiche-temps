@@ -3,7 +3,7 @@ import { useAppearance } from '@/composables/useAppearance';
 import { Link, router } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
-import { GitBranch, LogOut, Monitor, Moon, Sun } from 'lucide-vue-next';
+import { GitBranch, LogOut, Monitor, Moon, Settings, Sun } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 dayjs.locale('fr');
@@ -149,6 +149,14 @@ function progressBarClass(count) {
                     <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ fiches.length }} période{{ fiches.length !== 1 ? 's' : '' }}</p>
                 </div>
                 <div class="flex items-center gap-2">
+                    <!-- Settings -->
+                    <button
+                        @click="router.visit('/settings/application')"
+                        class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                        title="Paramètres"
+                    >
+                        <Settings class="h-4 w-4" />
+                    </button>
                     <!-- Theme toggle -->
                     <button
                         @click="cycleTheme"
