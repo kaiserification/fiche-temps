@@ -385,7 +385,7 @@ function createFiche() {
             </div>
 
             <!-- Calendar + Panel -->
-            <div class="grid grid-cols-3 gap-6">
+            <div class="grid grid-cols-3 gap-6" v-if="props.fiche">
                 <div class="col-span-2">
                     <CalendarGrid
                         :workdays="computedWorkdays"
