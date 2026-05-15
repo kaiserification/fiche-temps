@@ -134,7 +134,7 @@
                             <div class="task-line">{{ ($i + 1) . '. ' . $task }}</div>
                         @endforeach
                     </td>
-                    <td></td>
+                    <td>{{ $entry->comment ?? '' }}</td>
                 </tr>
             @endforeach
         </tbody>

@@ -131,18 +131,21 @@ class FicheExport implements WithEvents
             $sheet->setCellValue("A{$startRow}", Carbon::parse($entry->day)->format('d/m/Y'));
             $sheet->setCellValue("B{$startRow}", $this->fiche->projet);
             $sheet->setCellValue("C{$startRow}", $this->fiche->business_unit);
-            $sheet->setCellValue("E{$startRow}", '');
+            $sheet->setCellValue("E{$startRow}", $entry->comment ?? '');
 
             // Outline border on merged columns — allBorders dessinerait des traits À TRAVERS la fusion
             $outline = ['borders' => ['outline' => ['borderStyle' => Border::BORDER_THIN]]];
             $sheet->getStyle("A{$startRow}:A{$endRow}")->applyFromArray(array_merge($outline, [
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             ]));
-            foreach (['B', 'C', 'E'] as $col) {
+            foreach (['B', 'C'] as $col) {
                 $sheet->getStyle("{$col}{$startRow}:{$col}{$endRow}")->applyFromArray(array_merge($outline, [
                     'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                 ]));
             }
+            $sheet->getStyle("E{$startRow}:E{$endRow}")->applyFromArray(array_merge($outline, [
+                'alignment' => ['wrapText' => true, 'vertical' => Alignment::VERTICAL_TOP],
+            ]));
 
             // Une ligne par tâche : bordure individuelle + wrapText uniquement sur D
             foreach ($tasks as $i => $task) {

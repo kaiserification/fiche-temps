@@ -12,11 +12,11 @@ class DayEntryController extends Controller
     {
         abort_if($fiche->user_id !== $req->user()->id, 403);
 
-        $req->validate(['day' => 'required|date', 'tasks' => 'array']);
+        $req->validate(['day' => 'required|date', 'tasks' => 'array', 'comment' => 'nullable|string']);
 
         $entry = $fiche->dayEntries()->updateOrCreate(
             ['day' => Carbon::parse($req->day)->toDateString()],
-            ['tasks' => $req->tasks ?? []]
+            ['tasks' => $req->tasks ?? [], 'comment' => $req->comment]
         );
 
         return response()->json(['entry' => $entry, 'tasks' => $entry->tasks]);
@@ -26,8 +26,8 @@ class DayEntryController extends Controller
     {
         abort_if($fiche->user_id !== $req->user()->id, 403);
 
-        $req->validate(['tasks' => 'nullable|array']);
-        $entry->update(['tasks' => $req->tasks]);
+        $req->validate(['tasks' => 'nullable|array', 'comment' => 'nullable|string']);
+        $entry->update(['tasks' => $req->tasks, 'comment' => $req->comment]);
 
         return response()->json(['entry' => $entry]);
     }

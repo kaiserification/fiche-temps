@@ -12,15 +12,21 @@ const props = defineProps({
   day:         String,
   entryId:     Number,
   tasks:       Array,
+  comment:     String,
   saving:      Boolean,
   ficheExists: Boolean,
 })
 const emit = defineEmits(['save'])
 
-const localTasks = ref([...props.tasks])
+const localTasks   = ref([...props.tasks])
+const localComment = ref(props.comment ?? '')
 
-watch(() => props.tasks, t => { localTasks.value = [...t] })
-watch(() => props.day,   () => { localTasks.value = [...props.tasks] })
+watch(() => props.tasks,   t => { localTasks.value = [...t] })
+watch(() => props.comment, c => { localComment.value = c ?? '' })
+watch(() => props.day,     () => {
+  localTasks.value   = [...props.tasks]
+  localComment.value = props.comment ?? ''
+})
 
 const dateLabel = () => dayjs(props.day).format('dddd D MMMM')
 
@@ -36,7 +42,7 @@ function removeTask(i) {
 }
 
 function onSave() {
-    emit('save', props.day, props.entryId, localTasks.value.filter(t => t.trim()))
+    emit('save', props.day, props.entryId, localTasks.value.filter(t => t.trim()), localComment.value.trim())
     toast.success('Fiche sauvegardée avec succès !');
 }
 
@@ -283,6 +289,19 @@ async function generateFromGit() {
             + Ajouter une tâche
           </button>
         </div>
+      </div>
+
+      <!-- Comment -->
+      <div>
+        <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          Commentaire
+        </p>
+        <textarea
+          v-model="localComment"
+          rows="3"
+          placeholder="Observations, blocages, notes…"
+          class="w-full resize-none rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm text-gray-800 placeholder-gray-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-600"
+        />
       </div>
 
       <!-- Save -->

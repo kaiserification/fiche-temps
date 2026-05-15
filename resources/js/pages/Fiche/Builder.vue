@@ -102,7 +102,7 @@ async function updateFiche() {
 if (props.fiche?.day_entries) {
     props.fiche.day_entries.forEach((e) => {
         filledDays.value[e.day] = e.tasks;
-        dayEntries.value[e.day] = e;
+        dayEntries.value[e.day]  = e;
     });
 }
 
@@ -136,13 +136,13 @@ function getCsrf() {
 }
 
 // ── Save a day (create or update) ────────────────────────────────────────────
-async function saveDay(day, entryId, tasks) {
+async function saveDay(day, entryId, tasks, comment) {
     errorMsg.value = '';
     isSaving.value = true;
 
-    const url = entryId ? `/fiche/${props.fiche.id}/day/${entryId}` : `/fiche/${props.fiche.id}/day`;
+    const url    = entryId ? `/fiche/${props.fiche.id}/day/${entryId}` : `/fiche/${props.fiche.id}/day`;
     const method = entryId ? 'PUT' : 'POST';
-    const body = entryId ? { tasks } : { day, tasks };
+    const body   = entryId ? { tasks, comment } : { day, tasks, comment };
 
     try {
         const res = await fetch(url, {
@@ -159,7 +159,7 @@ async function saveDay(day, entryId, tasks) {
                 errorMsg.value = data.message ?? `Erreur HTTP ${res.status}`;
             } else {
                 filledDays.value[day] = data.tasks ?? tasks;
-                dayEntries.value[day] = data.entry;
+                dayEntries.value[day]  = data.entry;
             }
         }
     } catch {
@@ -408,6 +408,7 @@ function createFiche() {
                         :day="selectedDay"
                         :entry-id="dayEntries[selectedDay]?.id ?? null"
                         :tasks="filledDays[selectedDay] || []"
+                        :comment="dayEntries[selectedDay]?.comment ?? ''"
                         :saving="isSaving"
                         :fiche-exists="!!fiche"
                         @save="saveDay"
