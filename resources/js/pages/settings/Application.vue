@@ -1,24 +1,57 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, FolderOpen, Save, Settings, User } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ArrowLeft, FolderOpen, PenLine, Save, Settings, Trash2, User } from 'lucide-vue-next';
+import SignaturePad from 'signature_pad';
+import { nextTick, onMounted, ref } from 'vue';
 
 interface Props {
     settings: { sites_dir: string };
-    user: { name: string; matricule: string; profil: string };
+    user: { name: string; matricule: string; profil: string; signature: string };
 }
 
 const props = defineProps<Props>();
 
-const savedGit  = ref(false);
-const savedUser = ref(false);
+const savedGit       = ref(false);
+const savedUser      = ref(false);
+const savedSignature = ref(false);
+const signatureEmpty = ref(true);
 
-const gitForm = useForm({ sites_dir: props.settings.sites_dir });
+const signatureCanvas = ref<HTMLCanvasElement | null>(null);
+let padInstance: SignaturePad | null = null;
+
+const gitForm  = useForm({ sites_dir: props.settings.sites_dir });
 const userForm = useForm({
     name:      props.user.name,
     matricule: props.user.matricule,
     profil:    props.user.profil,
 });
+const signatureForm = useForm({ signature: '' });
+
+onMounted(async () => {
+    await nextTick();
+    const canvas = signatureCanvas.value;
+    if (!canvas) return;
+
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width  = canvas.offsetWidth  * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    canvas.getContext('2d')!.scale(ratio, ratio);
+
+    padInstance = new SignaturePad(canvas, { backgroundColor: 'rgba(255,255,255,0)' });
+    padInstance.addEventListener('endStroke', () => {
+        signatureEmpty.value = padInstance!.isEmpty();
+    });
+
+    if (props.user.signature) {
+        await padInstance.fromDataURL(props.user.signature);
+        signatureEmpty.value = false;
+    }
+});
+
+function clearSignature() {
+    padInstance?.clear();
+    signatureEmpty.value = true;
+}
 
 function submitGit() {
     gitForm.patch(route('app-settings.update'), {
@@ -31,6 +64,16 @@ function submitUser() {
     userForm.patch(route('app-settings.update-user'), {
         preserveScroll: true,
         onSuccess: () => { savedUser.value = true; setTimeout(() => (savedUser.value = false), 2500); },
+    });
+}
+
+function submitSignature() {
+    signatureForm.signature = (padInstance && !padInstance.isEmpty())
+        ? padInstance.toDataURL('image/png')
+        : '';
+    signatureForm.patch(route('app-settings.update-signature'), {
+        preserveScroll: true,
+        onSuccess: () => { savedSignature.value = true; setTimeout(() => (savedSignature.value = false), 2500); },
     });
 }
 </script>
@@ -59,7 +102,7 @@ function submitUser() {
             </div>
         </div>
 
-        <div class="mx-auto max-w-3xl px-6 py-8 space-y-6">
+        <div class="mx-auto max-w-3xl space-y-6 px-6 py-8">
 
             <!-- Section : Informations personnelles -->
             <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -73,7 +116,7 @@ function submitUser() {
                     </p>
                 </div>
 
-                <form @submit.prevent="submitUser" class="px-6 py-5 space-y-4">
+                <form @submit.prevent="submitUser" class="space-y-4 px-6 py-5">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Prénom &amp; Nom</label>
                         <input
@@ -127,6 +170,54 @@ function submitUser() {
                 </form>
             </div>
 
+            <!-- Section : Signature -->
+            <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
+                    <div class="flex items-center gap-2">
+                        <PenLine class="h-4 w-4 text-gray-400" />
+                        <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Signature</h2>
+                    </div>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        Dessinez votre signature. Elle apparaîtra en bas du PDF exporté.
+                    </p>
+                </div>
+
+                <div class="space-y-3 px-6 py-5">
+                    <div class="relative h-36 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700/30">
+                        <canvas ref="signatureCanvas" class="absolute inset-0 h-full w-full touch-none" />
+                        <span
+                            v-if="signatureEmpty"
+                            class="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-gray-400 dark:text-gray-500"
+                        >
+                            Signez ici avec la souris ou le doigt...
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <button
+                            type="button"
+                            @click="clearSignature"
+                            class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                        >
+                            <Trash2 class="h-3.5 w-3.5" />
+                            Effacer
+                        </button>
+                        <button
+                            type="button"
+                            @click="submitSignature"
+                            :disabled="signatureForm.processing"
+                            class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            <Save class="h-3.5 w-3.5" />
+                            Enregistrer
+                        </button>
+                        <Transition enter-active-class="transition-opacity duration-150" leave-active-class="transition-opacity duration-300" enter-from-class="opacity-0" leave-to-class="opacity-0">
+                            <span v-if="savedSignature" class="text-sm text-emerald-600 dark:text-emerald-400">Enregistré.</span>
+                        </Transition>
+                    </div>
+                </div>
+            </div>
+
             <!-- Section : Git -->
             <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                 <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
@@ -139,7 +230,7 @@ function submitUser() {
                     </p>
                 </div>
 
-                <form @submit.prevent="submitGit" class="px-6 py-5 space-y-4">
+                <form @submit.prevent="submitGit" class="space-y-4 px-6 py-5">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Chemin</label>
                         <input

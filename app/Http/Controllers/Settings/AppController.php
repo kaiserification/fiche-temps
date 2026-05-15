@@ -21,6 +21,7 @@ class AppController extends Controller
                 'name'      => $request->user()->name,
                 'matricule' => $request->user()->matricule ?? '',
                 'profil'    => $request->user()->profil ?? '',
+                'signature' => $request->user()->signature ?? '',
             ],
         ]);
     }
@@ -36,6 +37,17 @@ class AppController extends Controller
         $request->user()->update($validated);
 
         return back()->with('status', 'user-saved');
+    }
+
+    public function updateSignature(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'signature' => ['nullable', 'string'],
+        ]);
+
+        $request->user()->update($validated);
+
+        return back()->with('status', 'signature-saved');
     }
 
     public function update(Request $request): RedirectResponse

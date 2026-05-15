@@ -57,6 +57,29 @@
         .col-bu      { width: 17%; }
         .col-tasks   { width: 40%; }
         .col-comment { width: 15%; }
+
+        .signature-block {
+            margin-top: 24px;
+            width: 220px;
+            float: right;
+            text-align: center;
+        }
+        .signature-block .sig-label {
+            font-size: 9px;
+            color: #555;
+            text-align: left;
+            margin-bottom: 4px;
+        }
+        .signature-block img {
+            max-height: 65px;
+            max-width: 200px;
+        }
+        .signature-block .sig-name {
+            font-size: 9px;
+            border-top: 1px solid #000;
+            padding-top: 3px;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -115,6 +138,15 @@
             @endforeach
         </tbody>
     </table>
+
+
+    @if($user->signature)
+    <div class="signature-block">
+        <p class="sig-label">Signature :</p>
+        <img src="{{ $user->signature }}" alt="Signature" />
+        <p class="sig-name">{{ $user->name }}</p>
+    </div>
+    @endif
 
 </div>
 </body>
