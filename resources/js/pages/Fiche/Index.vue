@@ -321,7 +321,14 @@ function progressBarClass(count) {
                             @click.stop
                             class="flex-1 rounded-lg border border-emerald-200 py-1.5 text-center text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
                         >
-                            Exporter .xlsx
+                            .xlsx
+                        </a>
+                        <a
+                            :href="`/fiche/${fiche.id}/export/pdf`"
+                            @click.stop
+                            class="flex-1 rounded-lg border border-red-200 py-1.5 text-center text-xs font-medium text-red-700 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/30"
+                        >
+                            .pdf
                         </a>
                         <button
                             @click.stop="confirmingDelete = fiche.id"

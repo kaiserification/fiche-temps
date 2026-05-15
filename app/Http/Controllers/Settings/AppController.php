@@ -11,13 +11,31 @@ use Inertia\Response;
 
 class AppController extends Controller
 {
-    public function edit(): Response
+    public function edit(Request $request): Response
     {
         return Inertia::render('settings/Application', [
             'settings' => [
                 'sites_dir' => AppSettings::get('sites_dir', realpath(dirname(base_path()))),
             ],
+            'user' => [
+                'name'      => $request->user()->name,
+                'matricule' => $request->user()->matricule ?? '',
+                'profil'    => $request->user()->profil ?? '',
+            ],
         ]);
+    }
+
+    public function updateUser(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name'      => ['required', 'string', 'max:255'],
+            'matricule' => ['nullable', 'string', 'max:50'],
+            'profil'    => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $request->user()->update($validated);
+
+        return back()->with('status', 'user-saved');
     }
 
     public function update(Request $request): RedirectResponse

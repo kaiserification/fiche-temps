@@ -22,4 +22,5 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/application', [AppController::class, 'edit'])->name('app-settings.edit');
     Route::patch('settings/application', [AppController::class, 'update'])->name('app-settings.update');
+    Route::patch('settings/application/user', [AppController::class, 'updateUser'])->name('app-settings.update-user');
 });

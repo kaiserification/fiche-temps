@@ -23,7 +23,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/fiche/{fiche}/day',        [DayEntryController::class, 'store'])->name('day.store');
     Route::put('/fiche/{fiche}/day/{entry}', [DayEntryController::class, 'update'])->name('day.update');
 
-    Route::get('/fiche/{fiche}/export', [ExportController::class, 'export'])->name('fiche.export');
+    Route::get('/fiche/{fiche}/export',     [ExportController::class, 'export'])->name('fiche.export');
+    Route::get('/fiche/{fiche}/export/pdf', [ExportController::class, 'exportPdf'])->name('fiche.export.pdf');
 
     Route::get('/git-projects',       [GitCommitController::class, 'projects'])->name('git.projects');
     Route::post('/git-to-timesheet',  [GitCommitController::class, 'generate'])->name('git.generate');

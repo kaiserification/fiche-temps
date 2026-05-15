@@ -3,7 +3,9 @@
     "allow": [
       "Bash(php artisan *)",
       "Bash(xargs cat *)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(composer require *)",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\herd\\\\Sites\\\\fiche-temps\\\\resources\\\\views\\\\exports\")"
     ]
   }
 }
