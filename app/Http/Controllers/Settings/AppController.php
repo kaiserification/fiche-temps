@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Support\AppSettings;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,6 +38,29 @@ class AppController extends Controller
         $request->user()->update($validated);
 
         return back()->with('status', 'user-saved');
+    }
+
+    public function listDirectories(Request $request): JsonResponse
+    {
+        $path = $request->input('path', realpath(dirname(base_path())));
+        $path = realpath($path);
+
+        if (! $path || ! is_dir($path)) {
+            return response()->json(['current' => null, 'parent' => null, 'dirs' => []]);
+        }
+
+        $parent = dirname($path);
+
+        $dirs = collect(scandir($path))
+            ->filter(fn ($item) => $item !== '.' && $item !== '..' && is_dir($path . DIRECTORY_SEPARATOR . $item))
+            ->map(fn ($item) => ['name' => $item, 'path' => $path . DIRECTORY_SEPARATOR . $item])
+            ->values();
+
+        return response()->json([
+            'current' => $path,
+            'parent'  => $parent !== $path ? $parent : null,
+            'dirs'    => $dirs,
+        ]);
     }
 
     public function updateSignature(Request $request): RedirectResponse

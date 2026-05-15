@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, FolderOpen, PenLine, Save, Settings, Trash2, User } from 'lucide-vue-next';
 import SignaturePad from 'signature_pad';
 import { nextTick, onMounted, ref } from 'vue';
+import DirectoryBrowser from '../components/DirectoryBrowser.vue';
 
 interface Props {
     settings: { sites_dir: string };
@@ -11,6 +12,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const showBrowser    = ref(false);
 const savedGit       = ref(false);
 const savedUser      = ref(false);
 const savedSignature = ref(false);
@@ -233,14 +235,25 @@ function submitSignature() {
                 <form @submit.prevent="submitGit" class="space-y-4 px-6 py-5">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Chemin</label>
-                        <input
-                            v-model="gitForm.sites_dir"
-                            type="text"
-                            required
-                            placeholder="Ex: C:\Herd\Sites"
-                            class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/30"
-                            :class="{ 'border-red-400 focus:border-red-400 focus:ring-red-100': gitForm.errors.sites_dir }"
-                        />
+                        <div class="flex gap-2">
+                            <input
+                                v-model="gitForm.sites_dir"
+                                type="text"
+                                required
+                                placeholder="Ex: C:\Herd\Sites"
+                                class="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/30"
+                                :class="{ 'border-red-400 focus:border-red-400 focus:ring-red-100': gitForm.errors.sites_dir }"
+                            />
+                            <button
+                                type="button"
+                                @click="showBrowser = true"
+                                class="flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                                title="Parcourir"
+                            >
+                                <FolderOpen class="h-4 w-4" />
+                                Parcourir
+                            </button>
+                        </div>
                         <p v-if="gitForm.errors.sites_dir" class="text-xs text-red-600 dark:text-red-400">{{ gitForm.errors.sites_dir }}</p>
                     </div>
 
@@ -262,4 +275,11 @@ function submitSignature() {
 
         </div>
     </div>
+
+    <DirectoryBrowser
+        :show="showBrowser"
+        :initial-path="gitForm.sites_dir"
+        @select="gitForm.sites_dir = $event; showBrowser = false"
+        @close="showBrowser = false"
+    />
 </template>
