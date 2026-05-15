@@ -35,7 +35,7 @@
             margin-top: 4px;
         }
         .data-table th {
-            background-color: #4BACC6;
+            background-color: #123274;
             font-weight: bold;
             text-align: center;
             padding: 5px 6px;

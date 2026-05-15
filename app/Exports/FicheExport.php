@@ -91,7 +91,7 @@ class FicheExport implements WithEvents
             'font' => ['bold' => true, 'size' => 11],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF4BACC6'],
+                'startColor' => ['argb' => 'FF123274'],
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
