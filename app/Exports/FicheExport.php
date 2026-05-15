@@ -88,7 +88,7 @@ class FicheExport implements WithEvents
             $sheet->setCellValue("{$col}7", $label);
         }
         $sheet->getStyle('A7:E7')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 11],
+            'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
             'fill' => [
                 'fillType'   => Fill::FILL_SOLID,
                 'startColor' => ['argb' => 'FF123274'],
