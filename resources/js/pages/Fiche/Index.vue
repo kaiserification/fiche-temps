@@ -1,6 +1,6 @@
 <script setup>
 import { useAppearance } from '@/composables/useAppearance';
-import { Link, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
 import { GitBranch, LogOut, Monitor, Moon, Plus, Settings, Sun } from 'lucide-vue-next';
@@ -185,6 +185,7 @@ function progressBarClass(count) {
 </script>
 
 <template>
+    <Head title="Créer ma fiche de temps" />
     <div class="min-h-screen bg-gray-50 transition-colors dark:bg-gray-900">
         <!-- Top bar -->
         <div class="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800">

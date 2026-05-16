@@ -15,7 +15,7 @@ class FicheController extends Controller
         [$start, $end] = $svc->getPeriod();
 
         return Inertia::render('Fiche/Index', [
-            'fiches'      => $request->user()->fiches()->withCount('dayEntries')->latest()->get(),
+            'fiches'      => $request->user()->fiches()->withCount('dayEntries')->get(),
             'periodStart' => $start->toDateString(),
             'periodEnd'   => $end->toDateString(),
         ]);
