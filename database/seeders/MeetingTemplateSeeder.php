@@ -20,6 +20,6 @@ class MeetingTemplateSeeder extends Seeder
             ['label' => 'Code review',                 'sort_order' => 4],
             ['label' => 'Réunion client / stakeholder', 'sort_order' => 5],
         ];
-        foreach ($meetings as $m) MeetingTemplate::create($m);
+        foreach ($meetings as $m) MeetingTemplate::updateOrCreate(['label' => $m['label']], ['sort_order' => $m['sort_order']]);
     }
 }
