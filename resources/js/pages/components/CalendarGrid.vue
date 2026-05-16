@@ -51,15 +51,15 @@ function dayClasses(day) {
     return 'bg-indigo-600 text-white font-semibold cursor-pointer'
   if (isFilled(day))
     return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 font-medium cursor-pointer hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors'
-  if (isWeekend(day))
-    return 'text-gray-200 dark:text-gray-700 cursor-default'
   if (!isWorkday(day))
     return 'text-gray-200 dark:text-gray-700 cursor-default'
+  if (isWeekend(day))
+    return 'text-orange-400 dark:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-500 cursor-pointer transition-colors'
   return 'text-gray-600 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors'
 }
 
 function select(d) {
-  if (!d || isWeekend(d) || !isWorkday(d)) return
+  if (!d || !isWorkday(d)) return
   emit('select', d.format('YYYY-MM-DD'))
 }
 </script>
@@ -84,6 +84,10 @@ function select(d) {
       <span class="flex items-center gap-1.5">
         <span class="w-3.5 h-3.5 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 inline-block shrink-0"></span>
         Jour ouvrable
+      </span>
+      <span class="flex items-center gap-1.5 text-orange-400 dark:text-orange-500">
+        <span class="w-3.5 h-3.5 rounded bg-white dark:bg-gray-800 border border-orange-300 dark:border-orange-600 inline-block shrink-0"></span>
+        Week-end exceptionnel
       </span>
     </div>
 

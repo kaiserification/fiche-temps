@@ -106,6 +106,8 @@ if (props.fiche?.day_entries) {
     });
 }
 
+const allowWeekends = ref(false)
+
 // Workdays computed client-side
 const computedWorkdays = computed(() => {
     if (!localStart.value || !localEnd.value) return [];
@@ -115,7 +117,7 @@ const computedWorkdays = computed(() => {
     const days = [];
     let cur = start;
     while (cur.isSameOrBefore(end)) {
-        if (cur.day() !== 0 && cur.day() !== 6) days.push(cur.format('YYYY-MM-DD'));
+        if (allowWeekends.value || (cur.day() !== 0 && cur.day() !== 6)) days.push(cur.format('YYYY-MM-DD'));
         cur = cur.add(1, 'day');
     }
     return days;
@@ -392,6 +394,28 @@ function createFiche() {
             <!-- Calendar + Panel -->
             <div class="grid grid-cols-3 gap-6" v-if="props.fiche">
                 <div class="col-span-2">
+                    <div class="mb-3 flex items-center justify-end">
+                        <label class="flex cursor-pointer items-center gap-2 text-xs text-gray-500 dark:text-gray-400 select-none">
+                            <span>Inclure les week-ends</span>
+                            <button
+                                type="button"
+                                role="switch"
+                                :aria-checked="allowWeekends"
+                                @click="allowWeekends = !allowWeekends"
+                                :class="[
+                                    'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-1',
+                                    allowWeekends ? 'bg-orange-400' : 'bg-gray-200 dark:bg-gray-600'
+                                ]"
+                            >
+                                <span
+                                    :class="[
+                                        'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-200',
+                                        allowWeekends ? 'translate-x-4' : 'translate-x-0'
+                                    ]"
+                                />
+                            </button>
+                        </label>
+                    </div>
                     <CalendarGrid
                         :workdays="computedWorkdays"
                         :filled-days="filledDays"

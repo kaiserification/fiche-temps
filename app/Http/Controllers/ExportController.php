@@ -31,7 +31,7 @@ class ExportController extends Controller
         $entries = $fiche->dayEntries()
             ->orderBy('day')
             ->get()
-            ->filter(fn($e) => !empty($e->tasks))
+            ->filter(fn($e) => !empty($e->tasks) || !empty($e->comment))
             ->values();
 
         $name     = $user->name;

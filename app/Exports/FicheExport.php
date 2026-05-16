@@ -109,17 +109,16 @@ class FicheExport implements WithEvents
         $entries = $this->fiche->dayEntries()
             ->orderBy('day')
             ->get()
-            ->filter(fn($e) => !empty($e->tasks));
+            ->filter(fn($e) => !empty($e->tasks) || !empty($e->comment));
 
         $currentRow = 8;
 
         foreach ($entries as $entry) {
             $tasks     = array_values((array) $entry->tasks);
             $taskCount = count($tasks);
-            if ($taskCount === 0) continue;
 
             $startRow = $currentRow;
-            $endRow   = $currentRow + $taskCount - 1;
+            $endRow   = $taskCount > 1 ? $currentRow + $taskCount - 1 : $currentRow;
 
             if ($taskCount > 1) {
                 $sheet->mergeCells("A{$startRow}:A{$endRow}");
@@ -147,13 +146,20 @@ class FicheExport implements WithEvents
                 'alignment' => ['wrapText' => true, 'vertical' => Alignment::VERTICAL_TOP],
             ]));
 
-            // Une ligne par tâche : bordure individuelle + wrapText uniquement sur D
-            foreach ($tasks as $i => $task) {
-                $taskRow = $currentRow + $i;
-                $sheet->setCellValue("D{$taskRow}", ($i + 1) . '. ' . $task);
-                $sheet->getStyle("D{$taskRow}")->applyFromArray([
-                    'alignment' => ['wrapText' => true, 'vertical' => Alignment::VERTICAL_TOP],
-                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            if ($taskCount > 0) {
+                // Une ligne par tâche : bordure individuelle + wrapText uniquement sur D
+                foreach ($tasks as $i => $task) {
+                    $taskRow = $currentRow + $i;
+                    $sheet->setCellValue("D{$taskRow}", ($i + 1) . '. ' . $task);
+                    $sheet->getStyle("D{$taskRow}")->applyFromArray([
+                        'alignment' => ['wrapText' => true, 'vertical' => Alignment::VERTICAL_TOP],
+                        'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+                    ]);
+                }
+            } else {
+                // Commentaire seul, colonne D vide mais avec bordure
+                $sheet->getStyle("D{$startRow}")->applyFromArray([
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                 ]);
             }
 
