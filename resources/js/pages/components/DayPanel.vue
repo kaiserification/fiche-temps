@@ -2,7 +2,7 @@
 import { ref, watch, nextTick, computed } from 'vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/fr'
-import { FileSpreadsheet, GitBranch } from 'lucide-vue-next'
+import { FileSpreadsheet, GitBranch, List } from 'lucide-vue-next'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
@@ -62,6 +62,26 @@ async function copyForExcel() {
     await navigator.clipboard.writeText(excelText.value)
     excelCopied.value = true
     setTimeout(() => (excelCopied.value = false), 2000)
+}
+
+// ── Saisie rapide (bulk) ──────────────────────────────────────────────────────
+const showBulk  = ref(false)
+const bulkText  = ref('')
+
+function openBulk() {
+    bulkText.value = localTasks.value
+        .filter(t => t.trim())
+        .map((t, i) => `${i + 1}. ${t.trim()}`)
+        .join('\n')
+    showBulk.value = !showBulk.value
+}
+
+function importBulk() {
+    const lines = parseTaskLines(bulkText.value)
+    if (!lines.length) return
+    localTasks.value = lines
+    showBulk.value   = false
+    toast.success(`${lines.length} tâche${lines.length > 1 ? 's' : ''} importée${lines.length > 1 ? 's' : ''}`)
 }
 
 // ── Git → inject ──────────────────────────────────────────────────────────────
@@ -172,6 +192,18 @@ async function generateFromGit() {
             </button>
             <span class="text-gray-200 dark:text-gray-700">|</span>
             <button
+              @click="openBulk"
+              :class="showBulk
+                ? 'text-violet-600 dark:text-violet-400'
+                : 'text-gray-400 dark:text-gray-500 hover:text-violet-500 dark:hover:text-violet-400'"
+              class="flex items-center gap-1 text-[10px] font-medium transition-colors"
+              title="Saisie rapide (liste numérotée)"
+            >
+              <List class="w-3 h-3" />
+              Liste
+            </button>
+            <span class="text-gray-200 dark:text-gray-700">|</span>
+            <button
               @click="showExcel = !showExcel"
               :class="showExcel
                 ? 'text-emerald-600 dark:text-emerald-400'
@@ -215,6 +247,31 @@ async function generateFromGit() {
             {{ gitLoading ? 'Génération…' : 'Générer les tâches' }}
           </button>
           <p v-if="gitError" class="text-[10px] text-red-500 dark:text-red-400">{{ gitError }}</p>
+        </div>
+
+        <!-- Bulk input panel -->
+        <div v-if="showBulk" class="mb-3 rounded-lg border border-violet-100 dark:border-violet-900/50 bg-violet-50/60 dark:bg-violet-950/20 p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wider flex items-center gap-1">
+              <List class="w-3 h-3" />
+              Saisie rapide
+            </span>
+            <span class="text-[10px] text-violet-500/70 dark:text-violet-400/60">Format : 1. tâche, 2. tâche…</span>
+          </div>
+          <textarea
+            v-model="bulkText"
+            :rows="Math.max(4, bulkText.split('\n').length + 1)"
+            placeholder="1. Première tâche&#10;2. Deuxième tâche&#10;3. Troisième tâche"
+            class="w-full resize-none rounded-md border border-violet-200 dark:border-violet-800 bg-white dark:bg-gray-700 px-2.5 py-2 text-xs text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-400 font-mono"
+          />
+          <button
+            @click="importBulk"
+            :disabled="!bulkText.trim()"
+            class="w-full flex items-center justify-center gap-1.5 rounded-md bg-violet-600 py-1.5 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <List class="w-3 h-3" />
+            Importer les tâches
+          </button>
         </div>
 
         <!-- Excel cell view -->
