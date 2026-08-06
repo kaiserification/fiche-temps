@@ -25,4 +25,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('settings/application', [AppController::class, 'update'])->name('app-settings.update');
     Route::patch('settings/application/user',      [AppController::class, 'updateUser'])->name('app-settings.update-user');
     Route::patch('settings/application/signature', [AppController::class, 'updateSignature'])->name('app-settings.update-signature');
+    Route::post('settings/application/git-token',   [AppController::class, 'generateGitToken'])->name('app-settings.git-token.generate');
+    Route::delete('settings/application/git-token', [AppController::class, 'revokeGitToken'])->name('app-settings.git-token.revoke');
 });

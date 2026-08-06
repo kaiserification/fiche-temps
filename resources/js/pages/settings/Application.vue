@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, FolderOpen, PenLine, Save, Settings, Trash2, User } from 'lucide-vue-next';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ArrowLeft, Copy, FolderOpen, Key, PenLine, Save, Settings, Trash2, User } from 'lucide-vue-next';
 import SignaturePad from 'signature_pad';
 import { nextTick, onMounted, ref } from 'vue';
 import DirectoryBrowser from '../components/DirectoryBrowser.vue';
@@ -8,6 +8,8 @@ import DirectoryBrowser from '../components/DirectoryBrowser.vue';
 interface Props {
     settings: { sites_dir: string };
     user: { name: string; matricule: string; profil: string; signature: string };
+    hasGitToken: boolean;
+    plainTextToken: string | null;
 }
 
 const props = defineProps<Props>();
@@ -17,6 +19,9 @@ const savedGit       = ref(false);
 const savedUser      = ref(false);
 const savedSignature = ref(false);
 const signatureEmpty = ref(true);
+const tokenCopied    = ref(false);
+const hasGitToken    = ref(props.hasGitToken);
+const tokenProcessing = ref(false);
 
 const signatureCanvas = ref<HTMLCanvasElement | null>(null);
 let padInstance: SignaturePad | null = null;
@@ -60,6 +65,31 @@ function submitGit() {
         preserveScroll: true,
         onSuccess: () => { savedGit.value = true; setTimeout(() => (savedGit.value = false), 2500); },
     });
+}
+
+function generateGitToken() {
+    tokenProcessing.value = true;
+    router.post(route('app-settings.git-token.generate'), {}, {
+        preserveScroll: true,
+        onSuccess: () => { hasGitToken.value = true; },
+        onFinish: () => { tokenProcessing.value = false; },
+    });
+}
+
+function revokeGitToken() {
+    tokenProcessing.value = true;
+    router.delete(route('app-settings.git-token.revoke'), {
+        preserveScroll: true,
+        onSuccess: () => { hasGitToken.value = false; },
+        onFinish: () => { tokenProcessing.value = false; },
+    });
+}
+
+async function copyToken() {
+    if (!props.plainTextToken) return;
+    await navigator.clipboard.writeText(props.plainTextToken);
+    tokenCopied.value = true;
+    setTimeout(() => (tokenCopied.value = false), 2000);
 }
 
 function submitUser() {
@@ -271,6 +301,67 @@ function submitSignature() {
                         </Transition>
                     </div>
                 </form>
+            </div>
+
+            <!-- Section : Jeton API (script Git) -->
+            <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
+                    <div class="flex items-center gap-2">
+                        <Key class="h-4 w-4 text-gray-400" />
+                        <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Jeton API (script Git)</h2>
+                    </div>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        Utilisé par le script local <code>scripts/git-to-fiche</code> pour générer des tâches depuis vos commits sans exposer vos fichiers au serveur.
+                    </p>
+                </div>
+
+                <div class="space-y-3 px-6 py-5">
+                    <div v-if="plainTextToken" class="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+                        <p class="text-xs font-medium text-amber-800 dark:text-amber-400">
+                            Copiez ce jeton maintenant, il ne sera plus jamais affiché.
+                        </p>
+                        <div class="flex gap-2">
+                            <code class="min-w-0 flex-1 truncate rounded-md bg-white px-2.5 py-2 text-xs text-gray-800 dark:bg-gray-900 dark:text-gray-200">{{ plainTextToken }}</code>
+                            <button
+                                type="button"
+                                @click="copyToken"
+                                class="flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                            >
+                                <Copy class="h-3.5 w-3.5" />
+                                {{ tokenCopied ? 'Copié' : 'Copier' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Statut :
+                        <span :class="hasGitToken ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'">
+                            {{ hasGitToken ? 'Jeton actif' : 'Aucun jeton actif' }}
+                        </span>
+                    </p>
+
+                    <div class="flex items-center gap-3">
+                        <button
+                            type="button"
+                            @click="generateGitToken"
+                            :disabled="tokenProcessing"
+                            class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            <Key class="h-3.5 w-3.5" />
+                            {{ hasGitToken ? 'Régénérer un jeton' : 'Générer un jeton' }}
+                        </button>
+                        <button
+                            v-if="hasGitToken"
+                            type="button"
+                            @click="revokeGitToken"
+                            :disabled="tokenProcessing"
+                            class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                        >
+                            <Trash2 class="h-3.5 w-3.5" />
+                            Révoquer
+                        </button>
+                    </div>
+                </div>
             </div>
 
         </div>

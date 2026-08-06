@@ -69,7 +69,22 @@ class GitCommitController extends Controller
             return response()->json(['error' => 'Impossible de lire les commits git.'], 500);
         }
 
-        $commits = $this->filterCommits($result->output());
+        return $this->buildTasksResponse($result->output());
+    }
+
+    public function formatFromCommits(Request $request)
+    {
+        $request->validate([
+            'date'    => 'required|date_format:Y-m-d',
+            'commits' => 'required|string|max:20000',
+        ]);
+
+        return $this->buildTasksResponse($request->input('commits'));
+    }
+
+    private function buildTasksResponse(string $rawCommitLog)
+    {
+        $commits = $this->filterCommits($rawCommitLog);
 
         if (empty($commits)) {
             return response()->json(['empty' => true, 'tasks' => null]);

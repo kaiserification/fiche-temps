@@ -12,6 +12,8 @@ use Inertia\Response;
 
 class AppController extends Controller
 {
+    private const GIT_TOKEN_NAME = 'git-script';
+
     public function edit(Request $request): Response
     {
         return Inertia::render('settings/Application', [
@@ -24,7 +26,26 @@ class AppController extends Controller
                 'profil'    => $request->user()->profil ?? '',
                 'signature' => $request->user()->signature ?? '',
             ],
+            'hasGitToken'    => $request->user()->tokens()->where('name', self::GIT_TOKEN_NAME)->exists(),
+            'plainTextToken' => session('plainTextToken'),
         ]);
+    }
+
+    public function generateGitToken(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $user->tokens()->where('name', self::GIT_TOKEN_NAME)->delete();
+
+        $token = $user->createToken(self::GIT_TOKEN_NAME);
+
+        return back()->with('plainTextToken', $token->plainTextToken);
+    }
+
+    public function revokeGitToken(Request $request): RedirectResponse
+    {
+        $request->user()->tokens()->where('name', self::GIT_TOKEN_NAME)->delete();
+
+        return back()->with('status', 'git-token-revoked');
     }
 
     public function updateUser(Request $request): RedirectResponse
