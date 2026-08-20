@@ -128,7 +128,7 @@ class FicheExport implements WithEvents
             }
 
             $sheet->setCellValue("A{$startRow}", Carbon::parse($entry->day)->format('d/m/Y'));
-            $sheet->setCellValue("B{$startRow}", $this->fiche->projet);
+            $sheet->setCellValue("B{$startRow}", $entry->projet ?: $this->fiche->projet);
             $sheet->setCellValue("C{$startRow}", $this->fiche->business_unit);
             $sheet->setCellValue("E{$startRow}", $entry->comment ?? '');
 

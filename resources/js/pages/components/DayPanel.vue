@@ -13,6 +13,8 @@ const props = defineProps({
   entryId:     Number,
   tasks:       Array,
   comment:     String,
+  projet:      String,
+  ficheProjet: String,
   saving:      Boolean,
   ficheExists: Boolean,
 })
@@ -20,21 +22,29 @@ const emit = defineEmits(['save'])
 
 const localTasks   = ref([...props.tasks])
 const localComment = ref(props.comment ?? '')
+const localProjet  = ref(props.projet ?? '')
 
 watch(() => props.tasks,   t => { localTasks.value = [...t] })
 watch(() => props.comment, c => { localComment.value = c ?? '' })
+watch(() => props.projet,  p => { localProjet.value = p ?? '' })
 watch(() => props.day,     () => {
   localTasks.value   = [...props.tasks]
   localComment.value = props.comment ?? ''
+  localProjet.value  = props.projet ?? ''
 })
 
 const dateLabel = () => dayjs(props.day).format('dddd D MMMM')
 
-async function addTask() {
-  localTasks.value.push('')
+async function addTask(atStart = false) {
+  if (atStart) {
+    localTasks.value.unshift('')
+  } else {
+    localTasks.value.push('')
+  }
   await nextTick()
   const items = document.querySelectorAll('.task-item')
-  items[items.length - 1]?.focus()
+  const target = atStart ? items[0] : items[items.length - 1]
+  target?.focus()
 }
 
 function removeTask(i) {
@@ -42,7 +52,7 @@ function removeTask(i) {
 }
 
 function onSave() {
-    emit('save', props.day, props.entryId, localTasks.value.filter(t => t.trim()), localComment.value.trim())
+    emit('save', props.day, props.entryId, localTasks.value.filter(t => t.trim()), localComment.value.trim(), localProjet.value.trim())
     toast.success('Fiche sauvegardée avec succès !');
 }
 
@@ -171,6 +181,22 @@ async function generateFromGit() {
 
     <div class="p-4 space-y-4">
 
+      <!-- Project override -->
+      <div>
+        <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          Projet
+        </p>
+        <input
+          v-model="localProjet"
+          type="text"
+          :placeholder="ficheProjet || 'Nom du projet'"
+          title="Laissez vide pour utiliser le projet par défaut de la fiche"
+          class="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-800
+                 placeholder-gray-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500
+                 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-600"
+        />
+      </div>
+
       <!-- Task list -->
       <div>
         <div class="flex items-center justify-between mb-2">
@@ -216,7 +242,17 @@ async function generateFromGit() {
             </button>
             <span class="text-gray-200 dark:text-gray-700">|</span>
             <button
-              @click="addTask"
+              @click="addTask(true)"
+              title="Ajouter une tâche en début de liste"
+              class="text-[10px] font-medium text-indigo-500 dark:text-indigo-400
+                     hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+            >
+              + Début
+            </button>
+            <span class="text-gray-200 dark:text-gray-700">|</span>
+            <button
+              @click="addTask()"
+              title="Ajouter une tâche en fin de liste"
               class="text-[10px] font-medium text-indigo-500 dark:text-indigo-400
                      hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
             >

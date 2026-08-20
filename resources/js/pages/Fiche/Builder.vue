@@ -138,13 +138,13 @@ function getCsrf() {
 }
 
 // ── Save a day (create or update) ────────────────────────────────────────────
-async function saveDay(day, entryId, tasks, comment) {
+async function saveDay(day, entryId, tasks, comment, dayProjet) {
     errorMsg.value = '';
     isSaving.value = true;
 
     const url    = entryId ? `/fiche/${props.fiche.id}/day/${entryId}` : `/fiche/${props.fiche.id}/day`;
     const method = entryId ? 'PUT' : 'POST';
-    const body   = entryId ? { tasks, comment } : { day, tasks, comment };
+    const body   = entryId ? { tasks, comment, projet: dayProjet } : { day, tasks, comment, projet: dayProjet };
 
     try {
         const res = await fetch(url, {
@@ -434,6 +434,8 @@ function createFiche() {
                         :entry-id="dayEntries[selectedDay]?.id ?? null"
                         :tasks="filledDays[selectedDay] || []"
                         :comment="dayEntries[selectedDay]?.comment ?? ''"
+                        :projet="dayEntries[selectedDay]?.projet ?? ''"
+                        :fiche-projet="projet"
                         :saving="isSaving"
                         :fiche-exists="!!fiche"
                         @save="saveDay"

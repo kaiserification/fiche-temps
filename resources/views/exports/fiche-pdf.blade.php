@@ -127,7 +127,7 @@
                 @endphp
                 <tr>
                     <td class="center">{{ \Carbon\Carbon::parse($entry->day)->format('d/m/Y') }}</td>
-                    <td class="center">{{ $fiche->projet }}</td>
+                    <td class="center">{{ $entry->projet ?: $fiche->projet }}</td>
                     <td class="center">{{ $fiche->business_unit }}</td>
                     <td>
                         @foreach($tasks as $i => $task)
