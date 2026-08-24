@@ -49,6 +49,22 @@ export default {
                 destructive: {
                     DEFAULT: 'hsl(var(--destructive))',
                     foreground: 'hsl(var(--destructive-foreground))',
+                    muted: 'hsl(var(--destructive-muted))',
+                },
+                success: {
+                    DEFAULT: 'hsl(var(--success))',
+                    foreground: 'hsl(var(--success-foreground))',
+                    muted: 'hsl(var(--success-muted))',
+                },
+                warning: {
+                    DEFAULT: 'hsl(var(--warning))',
+                    foreground: 'hsl(var(--warning-foreground))',
+                    muted: 'hsl(var(--warning-muted))',
+                },
+                info: {
+                    DEFAULT: 'hsl(var(--info))',
+                    foreground: 'hsl(var(--info-foreground))',
+                    muted: 'hsl(var(--info-muted))',
                 },
                 border: 'hsl(var(--border))',
                 input: 'hsl(var(--input))',
@@ -70,6 +86,11 @@ export default {
                     border: 'hsl(var(--sidebar-border))',
                     ring: 'hsl(var(--sidebar-ring))',
                 },
+            },
+            boxShadow: {
+                'soft-sm': '0 1px 2px 0 hsl(252 30% 20% / 0.06), 0 1px 1px 0 hsl(252 30% 20% / 0.04)',
+                'soft-md': '0 4px 12px -2px hsl(252 30% 20% / 0.08), 0 2px 4px -2px hsl(252 30% 20% / 0.06)',
+                'soft-lg': '0 12px 32px -8px hsl(252 30% 20% / 0.14), 0 4px 8px -4px hsl(252 30% 20% / 0.08)',
             },
         },
     },
